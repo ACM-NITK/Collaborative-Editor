@@ -1,0 +1,90 @@
+  <head>
+    <title>Group Chat</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font: 13px Helvetica, Arial; }
+        form { background: #eee; padding: 3px; position: fixed; bottom: 0; width: 100%; border-color: #eee; border-top-style: solid; border-top-width: 1px;}
+        form input { border-style: solid; border-width: 1px; padding: 10px; width: 85%; margin-right: .5%; margin-left: 1%;margin-bottom: .5%; }
+        form button { width: 9%; border: none; padding: 10px; margin-left: 2%; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+        .jumbotron{
+          background-color: white;
+        }
+        .heading{
+          position:fixed; top=0; background: #eee; padding: 3px; width: 100%; border-color: #eee; border-top-style: solid; border-top-width: 1px;
+        }
+        #type {margin-left: 1.4%;}
+    </style>
+    <script src="../../socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  </head>
+  <body>
+    <h1 class="heading" align="center">CHAT</h1>
+    <div class="jumbotron">
+    <ul id="messages"></ul>
+    </div>
+    <form action="/" method="POST" id="chatForm" class="shadow">
+      <div id='type'> <br></div>
+      <input id="txt" autocomplete="off" autofocus="on" placeholder="Enter message here" /><button class="btn btn-warning btn-sm shadow">Send</button>
+    </form>
+    <script>
+            var socket = io.connect('http://localhost:8080');
+
+            $('form').submit(function(e){
+                e.preventDefault();
+                socket.emit('chat_message', $('#txt').val());
+                $('#txt').val('');
+                return false;
+            });
+
+            socket.on('chat_message', function(msg){
+                $('#messages').append($('<li>').html(msg));
+                window.scrollTo(0,document.querySelector("#messages").scrollHeight);
+            });
+
+            socket.on('is_online', function(username) {
+                $('#messages').append($('<li>').html(username));
+                window.scrollTo(0,document.querySelector("#messages").scrollHeight);
+            });
+
+            var username = prompt('Please tell me your name');
+            socket.emit('username', username);
+
+            $( "#txt" ).keydown(function() {
+                  socket.emit('typing');
+            });
+
+            var key=false;
+            var timeout=undefined;
+
+            function typetime(){
+              if(key==true)
+              {
+                socket.emit('stoptyping');
+                key=false;
+              }
+            }
+
+            socket.on('typing', function(username) {
+              if(key==false){
+                  $('#type').html('<p style="color:blue">'+ username + ' is typing...</p>');
+                  key=true;
+                  timeout=setTimeout(typetime, 500);
+              }
+              else{
+                  clearTimeout(timeout);
+                  timeout=setTimeout(typetime, 500);
+                }
+            });
+
+            socket.on('stoptyping', function() {
+                $('#type').html(' <br>');
+            });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
